@@ -81,9 +81,34 @@ struct RawBucket<K, V> {
     _marker: marker::PhantomData<(K,V)>,
 }
 
-impl<K,V> Copy for RawBucket<K,V> {}
-impl<K,V> Clone for RawBucket<K,V> {
+impl<K, V> Copy for RawBucket<K, V> {}
+
+impl<K, V> Clone for RawBucket<K, V> {
     fn clone(&self) -> RawBucket<K, V> { *self }
+}
+
+struct RawKeyBucket<K> {
+    hash: *mut u64,
+    key: *mut K,
+    _marker: marker::PhantomData<K>
+}
+
+impl<K> Copy for RawKeyBucket<K> {}
+
+impl<K> Clone for RawKeyBucket<K> {
+    fn clone(&self) -> RawKeyBucket<K> { *self }
+}
+
+struct RawValueBucket<V> {
+    hash: *mut u64,
+    val: *mut V,
+    _marker: marker::PhantomData<V>
+}
+
+impl<V> Copy for RawValueBucket<V> {}
+
+impl<V> Clone for RawValueBucket<V> {
+    fn clone(&self) -> RawValueBucket<V> { *self }
 }
 
 pub struct Bucket<K, V, M> {
@@ -177,6 +202,26 @@ impl<K, V> RawBucket<K, V> {
             key:  self.key.offset(count),
             val:  self.val.offset(count),
             _marker: marker::PhantomData,
+        }
+    }
+}
+
+impl<K> RawKeyBucket<K> {
+    unsafe fn offset(self, count: isize) -> RawKeyBucket<K> {
+        RawKeyBucket {
+            hash: self.hash.offset(count),
+            key: self.key.offset(count),
+            _marker: marker::PhantomData
+        }
+    }
+}
+
+impl<V> RawValueBucket<V> {
+    unsafe fn offset(self, count: isize) -> RawValueBucket<V> {
+        RawValueBucket {
+            hash: self.hash.offset(count),
+            val: self.val.offset(count),
+            _marker: marker::PhantomData
         }
     }
 }
@@ -641,6 +686,26 @@ impl<K, V> RawTable<K, V> {
         }
     }
 
+    fn first_key_bucket_raw(&self) -> RawKeyBucket<K> {
+        let bucket = self.first_bucket_raw();
+
+        RawKeyBucket {
+            hash: bucket.hash,
+            key: bucket.key,
+            _marker: marker::PhantomData
+        }
+    }
+
+    fn first_value_bucket_raw(&self) -> RawValueBucket<V> {
+        let bucket = self.first_bucket_raw();
+
+        RawValueBucket {
+            hash: bucket.hash,
+            val: bucket.val,
+            _marker: marker::PhantomData
+        }
+    }
+
     /// Creates a new raw table from a given capacity. All buckets are
     /// initially empty.
     pub fn new(capacity: usize) -> RawTable<K, V> {
@@ -669,6 +734,47 @@ impl<K, V> RawTable<K, V> {
                 self.hashes.offset(self.capacity as isize)
             },
             marker: marker::PhantomData,
+        }
+    }
+
+    fn raw_keys(&self) -> RawKeyBuckets<K> {
+        RawKeyBuckets {
+            raw: self.first_key_bucket_raw(),
+            hashes_end: unsafe {
+                self.hashes.offset(self.capacity as isize)
+            },
+            marker: marker::PhantomData
+        }
+    }
+
+    fn raw_values(&self) -> RawValueBuckets<V> {
+        RawValueBuckets {
+            raw: self.first_value_bucket_raw(),
+            hashes_end: unsafe {
+                self.hashes.offset(self.capacity as isize)
+            },
+            marker: marker::PhantomData
+        }
+    }
+
+    pub fn keys(&self) -> Keys<K> {
+        Keys {
+            iter: self.raw_keys(),
+            elems_left: self.size()
+        }
+    }
+
+    pub fn values(&self) -> Values<V> {
+        Values {
+            iter: self.raw_values(),
+            elems_left: self.size()
+        }
+    }
+
+    pub fn values_mut(&mut self) -> ValuesMut<V> {
+        ValuesMut {
+            iter: self.raw_values(),
+            elems_left: self.size()
         }
     }
 
@@ -739,6 +845,34 @@ struct RawBuckets<'a, K, V> {
     marker: marker::PhantomData<&'a ()>,
 }
 
+/// A raw key iterator with a safe interface.
+///
+/// This iterator is not a composition of RawBuckets so it can
+/// have only one type parameter (the key type).
+struct RawKeyBuckets<'a, K> {
+    raw: RawKeyBucket<K>,
+    hashes_end: *mut u64,
+
+    // Should be &'a K (which would require K: 'a) but we use
+    // RawKeyBuckets<'static> for move iterators and we don't
+    // want to require K: 'static there.
+    marker: marker::PhantomData<&'a ()>
+}
+
+/// A raw value iterator with a safe interface.
+///
+/// This iterator is not a composition of RawBuckets so it can
+/// have only one type parameter (the value type).
+struct RawValueBuckets<'a, V> {
+    raw: RawValueBucket<V>,
+    hashes_end: *mut u64,
+
+    // Should be &'a V (which would require V: 'a) but we use
+    // RawValueBuckets<'static> for move iterators and we don't
+    // want to require V: 'static there.
+    marker: marker::PhantomData<&'a ()>
+}
+
 // FIXME(#19839) Remove in favor of `#[derive(Clone)]`
 impl<'a, K, V> Clone for RawBuckets<'a, K, V> {
     fn clone(&self) -> RawBuckets<'a, K, V> {
@@ -750,11 +884,69 @@ impl<'a, K, V> Clone for RawBuckets<'a, K, V> {
     }
 }
 
+impl<'a, K> Clone for RawKeyBuckets<'a, K> {
+    fn clone(&self) -> Self {
+        RawKeyBuckets {
+            raw: self.raw,
+            hashes_end: self.hashes_end,
+            marker: marker::PhantomData
+        }
+    }
+}
+
+impl<'a, V> Clone for RawValueBuckets<'a, V> {
+    fn clone(&self) -> Self {
+        RawValueBuckets {
+            raw: self.raw,
+            hashes_end: self.hashes_end,
+            marker: marker::PhantomData
+        }
+    }
+}
+
 
 impl<'a, K, V> Iterator for RawBuckets<'a, K, V> {
     type Item = RawBucket<K, V>;
 
     fn next(&mut self) -> Option<RawBucket<K, V>> {
+        while self.raw.hash != self.hashes_end {
+            unsafe {
+                // We are swapping out the pointer to a bucket and replacing
+                // it with the pointer to the next one.
+                let prev = ptr::replace(&mut self.raw, self.raw.offset(1));
+                if *prev.hash != EMPTY_BUCKET {
+                    return Some(prev);
+                }
+            }
+        }
+
+        None
+    }
+}
+
+impl<'a, K> Iterator for RawKeyBuckets<'a, K> {
+    type Item = RawKeyBucket<K>;
+
+    fn next(&mut self) -> Option<RawKeyBucket<K>> {
+        while self.raw.hash != self.hashes_end {
+            unsafe {
+                // We are swapping out the pointer to a bucket and replacing
+                // it with the pointer to the next one.
+                let prev = ptr::replace(&mut self.raw, self.raw.offset(1));
+                if *prev.hash != EMPTY_BUCKET {
+                    return Some(prev);
+                }
+            }
+        }
+
+        None
+    }
+}
+
+impl<'a, V> Iterator for RawValueBuckets<'a, V> {
+    type Item = RawValueBucket<V>;
+
+    fn next(&mut self) -> Option<RawValueBucket<V>> {
         while self.raw.hash != self.hashes_end {
             unsafe {
                 // We are swapping out the pointer to a bucket and replacing
@@ -810,6 +1002,51 @@ impl<'a, K, V> Iterator for RevMoveBuckets<'a, K, V> {
     }
 }
 
+/// Iterator over shared references to keys in a table.
+pub struct Keys<'a, K: 'a> {
+   iter: RawKeyBuckets<'a, K>,
+   elems_left: usize
+}
+
+unsafe impl<'a, K: Sync> Sync for Keys<'a, K> {}
+unsafe impl<'a, K: Sync> Send for Keys<'a, K> {}
+
+impl<'a, K> Clone for Keys<'a, K> {
+    fn clone(&self) -> Self {
+        Keys {
+            iter: self.iter.clone(),
+            elems_left: self.elems_left
+        }
+    }
+}
+
+/// Iterator over shared references to values in a table.
+pub struct Values<'a, V: 'a> {
+   iter: RawValueBuckets<'a, V>,
+   elems_left: usize
+}
+
+unsafe impl<'a, V: Sync> Sync for Values<'a, V> {}
+unsafe impl<'a, V: Sync> Send for Values<'a, V> {}
+
+impl<'a, V> Clone for Values<'a, V> {
+    fn clone(&self) -> Self {
+        Values {
+            iter: self.iter.clone(),
+            elems_left: self.elems_left
+        }
+    }
+}
+
+/// Iterator over shared references to values in a table.
+pub struct ValuesMut<'a, V: 'a> {
+   iter: RawValueBuckets<'a, V>,
+   elems_left: usize
+}
+
+unsafe impl<'a, V> Sync for ValuesMut<'a, V> {}
+unsafe impl<'a, V> Send for ValuesMut<'a, V> {}
+
 /// Iterator over shared references to entries in a table.
 pub struct Iter<'a, K: 'a, V: 'a> {
     iter: RawBuckets<'a, K, V>,
@@ -828,7 +1065,6 @@ impl<'a, K, V> Clone for Iter<'a, K, V> {
         }
     }
 }
-
 
 /// Iterator over mutable references to entries in a table.
 pub struct IterMut<'a, K: 'a, V: 'a> {
@@ -859,6 +1095,39 @@ pub struct Drain<'a, K: 'a, V: 'a> {
 unsafe impl<'a, K: Sync, V: Sync> Sync for Drain<'a, K, V> {}
 unsafe impl<'a, K: Send, V: Send> Send for Drain<'a, K, V> {}
 
+impl<'a, K> Iterator for Keys<'a, K> {
+    type Item = &'a K;
+
+    fn next(&mut self) -> Option<&'a K> {
+        self.iter.next().map(|bucket| {
+            self.elems_left -= 1;
+            unsafe { &*bucket.key }
+        })
+    }
+}
+
+impl<'a, V> Iterator for Values<'a, V> {
+    type Item = &'a V;
+
+    fn next(&mut self) -> Option<&'a V> {
+        self.iter.next().map(|bucket| {
+            self.elems_left -= 1;
+            unsafe { &*bucket.val }
+        })
+    }
+}
+
+impl<'a, V> Iterator for ValuesMut<'a, V> {
+    type Item = &'a mut V;
+
+    fn next(&mut self) -> Option<&'a mut V> {
+        self.iter.next().map(|bucket| {
+            self.elems_left -= 1;
+            unsafe { &mut *bucket.val }
+        })
+    }
+}
+
 impl<'a, K, V> Iterator for Iter<'a, K, V> {
     type Item = (&'a K, &'a V);
 
@@ -876,6 +1145,7 @@ impl<'a, K, V> Iterator for Iter<'a, K, V> {
         (self.elems_left, Some(self.elems_left))
     }
 }
+
 impl<'a, K, V> ExactSizeIterator for Iter<'a, K, V> {
     fn len(&self) -> usize { self.elems_left }
 }
@@ -897,6 +1167,7 @@ impl<'a, K, V> Iterator for IterMut<'a, K, V> {
         (self.elems_left, Some(self.elems_left))
     }
 }
+
 impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> {
     fn len(&self) -> usize { self.elems_left }
 }
@@ -924,6 +1195,7 @@ impl<K, V> Iterator for IntoIter<K, V> {
         (size, Some(size))
     }
 }
+
 impl<K, V> ExactSizeIterator for IntoIter<K, V> {
     fn len(&self) -> usize { self.table.size() }
 }
@@ -960,6 +1232,18 @@ impl<'a, K: 'a, V: 'a> Drop for Drain<'a, K, V> {
     fn drop(&mut self) {
         for _ in self {}
     }
+}
+
+impl<'a, K> ExactSizeIterator for Keys<'a, K> {
+    fn len(&self) -> usize { self.elems_left }
+}
+
+impl<'a, V> ExactSizeIterator for Values<'a, V> {
+    fn len(&self) -> usize { self.elems_left }
+}
+
+impl<'a, V> ExactSizeIterator for ValuesMut<'a, V> {
+    fn len(&self) -> usize { self.elems_left }
 }
 
 impl<K: Clone, V: Clone> Clone for RawTable<K, V> {

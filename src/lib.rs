@@ -844,11 +844,8 @@ impl<K, V, S> HashMap<K, V, S>
     ///     println!("{}", key);
     /// }
     /// ```
-    pub fn keys<'a>(&'a self) -> Keys<'a, K, V> {
-        fn first<A, B>((a, _): (A, B)) -> A { a }
-        let first: fn((&'a K,&'a V)) -> &'a K = first; // coerce to fn ptr
-
-        Keys { inner: self.iter().map(first) }
+    pub fn keys<'a>(&'a self) -> Keys<'a, K> {
+        Keys { inner: self.table.keys() }
     }
 
     /// An iterator visiting all values in arbitrary order.
@@ -868,11 +865,36 @@ impl<K, V, S> HashMap<K, V, S>
     ///     println!("{}", val);
     /// }
     /// ```
-    pub fn values<'a>(&'a self) -> Values<'a, K, V> {
-        fn second<A, B>((_, b): (A, B)) -> B { b }
-        let second: fn((&'a K,&'a V)) -> &'a V = second; // coerce to fn ptr
+    pub fn values<'a>(&'a self) -> Values<'a, V> {
+        Values { inner: self.table.values() }
+    }
 
-        Values { inner: self.iter().map(second) }
+    /// An iterator visiting all values in arbitrary order.
+    /// Iterator element type is `&'a mut V`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use hashmap2::HashMap;
+    ///
+    /// let mut map = HashMap::new();
+    /// map.insert("a", 1);
+    /// map.insert("b", 2);
+    /// map.insert("c", 3);
+    ///
+    /// // Prints 1, 2, 3
+    /// for val in map.values_mut() {
+    ///     println!("{}", val);
+    ///     *val += 1;
+    /// }
+    ///
+    /// // Prints 2, 3, 4
+    /// for val in map.values_mut() {
+    ///     println!("{}", val);
+    /// }
+    /// ```
+    pub fn values_mut(&mut self) -> ValuesMut<V> {
+        ValuesMut { inner: self.table.values_mut() }
     }
 
     /// An iterator visiting all key-value pairs in arbitrary order.
@@ -1388,13 +1410,13 @@ pub struct IntoIter<K, V> {
 }
 
 /// HashMap keys iterator.
-pub struct Keys<'a, K: 'a, V: 'a> {
-    inner: Map<Iter<'a, K, V>, fn((&'a K, &'a V)) -> &'a K>
+pub struct Keys<'a, K: 'a> {
+    inner: table::Keys<'a, K>
 }
 
 // FIXME(#19839) Remove in favor of `#[derive(Clone)]`
-impl<'a, K, V> Clone for Keys<'a, K, V> {
-    fn clone(&self) -> Keys<'a, K, V> {
+impl<'a, K> Clone for Keys<'a, K> {
+    fn clone(&self) -> Keys<'a, K> {
         Keys {
             inner: self.inner.clone()
         }
@@ -1402,13 +1424,18 @@ impl<'a, K, V> Clone for Keys<'a, K, V> {
 }
 
 /// HashMap values iterator.
-pub struct Values<'a, K: 'a, V: 'a> {
-    inner: Map<Iter<'a, K, V>, fn((&'a K, &'a V)) -> &'a V>
+pub struct Values<'a, V: 'a> {
+    inner: table::Values<'a, V>
+}
+
+/// HashMap mutable values iterator.
+pub struct ValuesMut<'a, V: 'a> {
+    inner: table::ValuesMut<'a, V>
 }
 
 // FIXME(#19839) Remove in favor of `#[derive(Clone)]`
-impl<'a, K, V> Clone for Values<'a, K, V> {
-    fn clone(&self) -> Values<'a, K, V> {
+impl<'a, V> Clone for Values<'a, V> {
+    fn clone(&self) -> Values<'a, V> {
         Values {
             inner: self.inner.clone()
         }
@@ -1535,23 +1562,33 @@ impl<K, V> ExactSizeIterator for IntoIter<K, V> {
     #[inline] fn len(&self) -> usize { self.inner.len() }
 }
 
-impl<'a, K, V> Iterator for Keys<'a, K, V> {
+impl<'a, K> Iterator for Keys<'a, K> {
     type Item = &'a K;
 
     #[inline] fn next(&mut self) -> Option<(&'a K)> { self.inner.next() }
     #[inline] fn size_hint(&self) -> (usize, Option<usize>) { self.inner.size_hint() }
 }
-impl<'a, K, V> ExactSizeIterator for Keys<'a, K, V> {
+impl<'a, K> ExactSizeIterator for Keys<'a, K> {
     #[inline] fn len(&self) -> usize { self.inner.len() }
 }
 
-impl<'a, K, V> Iterator for Values<'a, K, V> {
+impl<'a, V> Iterator for Values<'a, V> {
     type Item = &'a V;
 
     #[inline] fn next(&mut self) -> Option<(&'a V)> { self.inner.next() }
     #[inline] fn size_hint(&self) -> (usize, Option<usize>) { self.inner.size_hint() }
 }
-impl<'a, K, V> ExactSizeIterator for Values<'a, K, V> {
+impl<'a, V> ExactSizeIterator for Values<'a, V> {
+    #[inline] fn len(&self) -> usize { self.inner.len() }
+}
+
+impl<'a, V> Iterator for ValuesMut<'a, V> {
+    type Item = &'a mut V;
+
+    #[inline] fn next(&mut self) -> Option<&'a mut V> { self.inner.next() }
+    #[inline] fn size_hint(&self) -> (usize, Option<usize>) { self.inner.size_hint() }
+}
+impl<'a, V> ExactSizeIterator for ValuesMut<'a, V> {
     #[inline] fn len(&self) -> usize { self.inner.len() }
 }
 
@@ -2133,6 +2170,21 @@ mod test_map {
         assert!(values.contains(&'a'));
         assert!(values.contains(&'b'));
         assert!(values.contains(&'c'));
+    }
+
+    #[test]
+    fn test_values_mut() {
+        let vec = vec![(1, 10), (2, 15), (3, 20)];
+        let mut map: HashMap<_, _> = vec.into_iter().collect();
+
+        let values: Vec<_> = map.values_mut().map(|value| {
+            *value += 1; &*value
+        }).cloned().collect();
+
+        assert_eq!(values.len(), 3);
+        assert!(values.contains(&11));
+        assert!(values.contains(&16));
+        assert!(values.contains(&21));
     }
 
     #[test]

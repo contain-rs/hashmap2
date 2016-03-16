@@ -9,6 +9,7 @@
 
     <title>hashmap2::Entry - Rust</title>
 
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../main.css">
 
     
@@ -45,18 +46,19 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-1028' class='srclink' href='../src/hashmap2/lib.rs.html#1434-1440' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-1023' class='srclink' href='../src/hashmap2/src/lib.rs.html#1429-1435' title='goto source code'>[src]</a></span></h1>
 <pre class='rust enum'>pub enum Entry&lt;'a, K: 'a, V: 'a&gt; {
     Occupied(<a class='struct' href='../hashmap2/struct.OccupiedEntry.html' title='hashmap2::OccupiedEntry'>OccupiedEntry</a>&lt;'a, K, V&gt;),
     Vacant(<a class='struct' href='../hashmap2/struct.VacantEntry.html' title='hashmap2::VacantEntry'>VacantEntry</a>&lt;'a, K, V&gt;),
 }</pre><div class='docblock'><p>A view into a single location in a map, which may be vacant or occupied.</p>
 </div><h2 class='variants'>Variants</h2>
-<table><tr><td id='variant.Occupied'><code>Occupied</code></td><td><div class='docblock'><p>An occupied Entry.</p>
-</div></td></tr><tr><td id='variant.Vacant'><code>Vacant</code></td><td><div class='docblock'><p>A vacant Entry.</p>
-</div></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl&lt;'a, K, V&gt; <a class='enum' href='../hashmap2/enum.Entry.html' title='hashmap2::Entry'>Entry</a>&lt;'a, K, V&gt;</code></h3><div class='impl-items'><h4 id='method.key' class='method'><code>fn <a href='#method.key' class='fnname'>key</a>(&amp;self) -&gt; &amp;K</code></h4>
+<table class='variants_table'><tr><td id='variant.Occupied'><code>Occupied</code></td><td><div class='docblock'><p>An occupied Entry.</p>
+</div></td><td></td></tr><tr><td id='variant.Vacant'><code>Vacant</code></td><td><div class='docblock'><p>A vacant Entry.</p>
+</div></td><td></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl&lt;'a, K, V&gt; <a class='enum' href='../hashmap2/enum.Entry.html' title='hashmap2::Entry'>Entry</a>&lt;'a, K, V&gt;</code></h3><div class='impl-items'><h4 id='method.key' class='method'><code>fn <a href='#method.key' class='fnname'>key</a>(&amp;self) -&gt; &amp;K</code></h4>
 <div class='docblock'><p>Returns the entry key</p>
 
-<h1 id='examples' class='section-header'><a href='#examples'>Examples</a></h1><pre class='rust rust-example-rendered'>
+<h1 id='examples' class='section-header'><a href='#examples'>Examples</a></h1>
+<pre class='rust rust-example-rendered'>
 <span class='kw'>use</span> <span class='ident'>hashmap2</span>::<span class='ident'>HashMap</span>;
 
 <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>map</span> <span class='op'>=</span> <span class='ident'>HashMap</span>::<span class='op'>&lt;</span><span class='ident'>String</span>, <span class='ident'>u32</span><span class='op'>&gt;</span>::<span class='ident'>new</span>();
@@ -111,7 +113,7 @@ and returns a mutable reference to the value in the entry.</p>
 
                 <p>
                     Search functions by type signature (e.g.
-                    <code>vec -> usize</code>)
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
                 </p>
             </div>
         </div>

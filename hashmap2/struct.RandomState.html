@@ -9,6 +9,7 @@
 
     <title>hashmap2::RandomState - Rust</title>
 
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../main.css">
 
     
@@ -45,7 +46,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-1250' class='srclink' href='../src/hashmap2/lib.rs.html#1717-1720' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-1245' class='srclink' href='../src/hashmap2/src/lib.rs.html#1712-1715' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct RandomState {
     // some fields omitted
 }</pre><div class='docblock'><p><code>RandomState</code> is the default state for <code>HashMap</code> types.</p>
@@ -55,11 +56,11 @@
 instances are unlikely to produce the same result for the same values.</p>
 </div><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl <a class='struct' href='../hashmap2/struct.RandomState.html' title='hashmap2::RandomState'>RandomState</a></code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>() -&gt; <a class='struct' href='../hashmap2/struct.RandomState.html' title='hashmap2::RandomState'>RandomState</a></code></h4>
 <div class='docblock'><p>Constructs a new <code>RandomState</code> that is initialized with random keys.</p>
-</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/std/collections/hash/state/trait.HashState.html' title='std::collections::hash::state::HashState'>HashState</a> for <a class='struct' href='../hashmap2/struct.RandomState.html' title='hashmap2::RandomState'>RandomState</a></code></h3><div class='impl-items'><h4 id='assoc_type.Hasher' class='type'><code>type Hasher = <a class='struct' href='https://doc.rust-lang.org/nightly/core/hash/sip/struct.SipHasher.html' title='core::hash::sip::SipHasher'>SipHasher</a></code></h4>
-<h4 id='method.hasher' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/std/collections/hash/state/trait.HashState.html#method.hasher' class='fnname'>hasher</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/core/hash/sip/struct.SipHasher.html' title='core::hash::sip::SipHasher'>SipHasher</a></code></h4>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.BuildHasher.html' title='core::hash::BuildHasher'>BuildHasher</a> for <a class='struct' href='../hashmap2/struct.RandomState.html' title='hashmap2::RandomState'>RandomState</a></code></h3><div class='impl-items'><h4 id='associatedtype.Hasher' class='type'><code>type Hasher = <a class='struct' href='https://doc.rust-lang.org/nightly/core/hash/sip/struct.SipHasher.html' title='core::hash::sip::SipHasher'>SipHasher</a></code></h4>
+<h4 id='method.build_hasher' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/hash/trait.BuildHasher.html#method.build_hasher' class='fnname'>build_hasher</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/core/hash/sip/struct.SipHasher.html' title='core::hash::sip::SipHasher'>SipHasher</a></code></h4>
 </div><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/default/trait.Default.html' title='core::default::Default'>Default</a> for <a class='struct' href='../hashmap2/struct.RandomState.html' title='hashmap2::RandomState'>RandomState</a></code></h3><div class='impl-items'><h4 id='method.default' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/default/trait.Default.html#method.default' class='fnname'>default</a>() -&gt; <a class='struct' href='../hashmap2/struct.RandomState.html' title='hashmap2::RandomState'>RandomState</a></code></h4>
 </div><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../hashmap2/struct.RandomState.html' title='hashmap2::RandomState'>RandomState</a></code></h3><div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../hashmap2/struct.RandomState.html' title='hashmap2::RandomState'>RandomState</a></code></h4>
-<h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code></h4>
+<h4 id='method.clone_from' class='method'><span class="since">1.0.0</span><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code></h4>
 </div></section>
     <section id='search' class="content hidden"></section>
 
@@ -103,7 +104,7 @@ instances are unlikely to produce the same result for the same values.</p>
 
                 <p>
                     Search functions by type signature (e.g.
-                    <code>vec -> usize</code>)
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
                 </p>
             </div>
         </div>

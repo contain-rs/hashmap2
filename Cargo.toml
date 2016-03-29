@@ -37,3 +37,4 @@ homepage    = "https://github.com/carllerche/hashmap2"
 
 [dependencies]
 rand = "0.3.12"
+hash-table = { git = "https://github.com/carllerche/hash-table" }

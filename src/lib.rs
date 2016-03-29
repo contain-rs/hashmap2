@@ -7,23 +7,13 @@
 // <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
-#![feature(
-    alloc,
-    core_intrinsics,
-    dropck_parametricity,
-    filling_drop,
-    heap_api,
-    oom,
-    unique,
-    unsafe_no_drop_flag)]
 
 #![cfg_attr(test, feature(inclusive_range_syntax))]
 
-extern crate alloc;
 extern crate rand;
+extern crate hash_table as table;
 
 mod recover;
-mod table;
 
 use self::Entry::*;
 use self::VacantEntryState::*;
